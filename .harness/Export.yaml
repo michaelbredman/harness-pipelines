@@ -1,0 +1,64 @@
+pipeline:
+  name: Export
+  identifier: Export
+  projectIdentifier: Redman_Sandbox
+  orgIdentifier: SE_Sandbox
+  tags: {}
+  stages:
+    - stage:
+        name: Script
+        identifier: Script
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Shell Script_1
+                  identifier: ShellScript_1
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: export name=123
+                    environmentVariables: []
+                    outputVariables:
+                      - name: newname
+                        type: String
+                        value: name
+                  timeout: 10m
+                  failureStrategies: []
+              - step:
+                  type: ShellScript
+                  name: Shell Script_2
+                  identifier: ShellScript_2
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: "echo \"var: \"<+execution.steps.ShellScript_1.output.outputVariables.newname>"
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+                  failureStrategies: []
+              - step:
+                  type: JiraCreate
+                  name: Jira Create_1
+                  identifier: JiraCreate_1
+                  spec:
+                    connectorRef: account.Harness_JIRA
+                    projectKey: SE
+                    issueType: Story
+                    fields:
+                      - name: Description
+                        value: Mike's | <+execution.steps.ShellScript_1.output.outputVariables.newname>
+                      - name: Summary
+                        value: "Pipeline Name: <+pipeline.name>"
+                  timeout: 1d
+                  failureStrategies: []
+        tags: {}
