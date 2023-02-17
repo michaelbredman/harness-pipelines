@@ -1,0 +1,44 @@
+pipeline:
+  name: Mastodon iOS App
+  identifier: Mastodon_iOS_App
+  projectIdentifier: Redman_Sandbox
+  orgIdentifier: SE_Sandbox
+  tags: {}
+  properties:
+    ci:
+      codebase:
+        connectorRef: RedmanGHHarnessHosted
+        repoName: mastodon/mastodon-ios
+        build: <+input>
+  stages:
+    - stage:
+        name: CI Build
+        identifier: CI_Build
+        description: ""
+        type: CI
+        spec:
+          cloneCodebase: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Setup
+                  identifier: Setup
+                  spec:
+                    shell: Bash
+                    command: |-
+                      cp .env.example .env
+                      exec ./.github/scripts/setup.sh
+              - step:
+                  type: Run
+                  name: Build
+                  identifier: Build
+                  spec:
+                    shell: Sh
+                    command: "#!/bin/bash\n\nset -eo pipefail\n\n# build with SwiftPM:\n# https://developer.apple.com/documentation/swift_packages/building_swift_packages_or_apps_that_use_them_in_continuous_integration_workflows\n\nxcodebuild -workspace Mastodon.xcworkspace \\\n\t-scheme Mastodon \\\n \t-destination \"platform=iOS Simulator,name=iPhone SE (3rd generation)\" \\\n\tclean \\\n\tbuild | xcpretty"
+          platform:
+            os: MacOS
+            arch: Arm64
+          runtime:
+            type: Cloud
+            spec: {}
