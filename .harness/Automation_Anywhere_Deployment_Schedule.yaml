@@ -1,0 +1,127 @@
+pipeline:
+  name: Automation Anywhere Deployment Schedule
+  identifier: Automation_Anywhere_Deployment_Schedule
+  projectIdentifier: Redman_Sandbox
+  orgIdentifier: SE_Sandbox
+  tags: {}
+  stages:
+    - stage:
+        name: Create Schedules
+        identifier: Create_Schedules
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: TerraformPlan
+                  name: Terraform Plan
+                  identifier: Terraform_Plan
+                  spec:
+                    configuration:
+                      command: Apply
+                      configFiles:
+                        store:
+                          type: Github
+                          spec:
+                            gitFetchType: Branch
+                            connectorRef: redmanGH
+                            repoName: aahelmfile
+                            branch: main
+                            folderPath: terraform
+                      secretManagerRef: harnessSecretManager
+                      exportTerraformPlanJson: true
+                    provisionerIdentifier: crontrigger1
+                  timeout: 2m
+                  failureStrategies: []
+              - step:
+                  type: JiraCreate
+                  name: Jira Create
+                  identifier: Jira_Create
+                  spec:
+                    connectorRef: account.Harness_JIRA
+                    projectKey: SE
+                    issueType: Story
+                    fields:
+                      - name: Description
+                        value: Redman's ticket for | <+pipeline.name> | <+pipeline.sequenceId>
+                      - name: Summary
+                        value: <+pipeline.name> | <+pipeline.sequenceId>
+                  timeout: 1d
+              - step:
+                  type: ShellScript
+                  name: Attach JSON to Jira
+                  identifier: Attach_JSON_to_Jira
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          echo "Attaching: " <+execution.steps.Terraform_Plan.plan.jsonFilePath> "to Jira issue <+execution.steps.Jira_Create.issue.key>"
+
+                          curl --request POST \
+                          --url 'https://harness.atlassian.net/rest/api/3/issue/<+execution.steps.Jira_Create.issue.key>/attachments' \
+                          --user 'michael.redman@harness.io:<+secrets.getValue("redman_jira_api_key")>' \
+                          --header 'Accept: application/json' \
+                          --header 'Content-Type: multipart/form-data' \
+                          --header 'X-Atlassian-Token: no-check' \
+                          -F "file=@<+execution.steps.Terraform_Plan.plan.jsonFilePath>"
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+              - step:
+                  type: TerraformApply
+                  name: Terraform Apply_1
+                  identifier: TerraformApply_1
+                  spec:
+                    configuration:
+                      type: Inline
+                      spec:
+                        configFiles:
+                          store:
+                            type: Github
+                            spec:
+                              gitFetchType: Branch
+                              connectorRef: redmanGH
+                              repoName: aahelmfile
+                              branch: main
+                              folderPath: terraform
+                    provisionerIdentifier: crontrigger1
+                  timeout: 10m
+              - step:
+                  type: JiraApproval
+                  name: Jira Approval_1
+                  identifier: JiraApproval_1
+                  spec:
+                    connectorRef: account.Harness_JIRA
+                    projectKey: SE
+                    issueType: Story
+                    issueKey: <+execution.steps.Jira_Create.issue.key>
+                    approvalCriteria:
+                      type: KeyValues
+                      spec:
+                        matchAnyCondition: true
+                        conditions:
+                          - key: Status
+                            operator: equals
+                            value: Done
+                    rejectionCriteria:
+                      type: KeyValues
+                      spec:
+                        matchAnyCondition: true
+                        conditions: []
+                  timeout: 1d
+              - step:
+                  type: TerraformDestroy
+                  name: Terraform Destroy_1
+                  identifier: TerraformDestroy_1
+                  spec:
+                    provisionerIdentifier: crontrigger1
+                    configuration:
+                      type: InheritFromApply
+                  timeout: 10m
+        tags: {}
+  delegateSelectors:
+    - cisco-test
