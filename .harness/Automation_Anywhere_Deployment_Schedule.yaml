@@ -122,20 +122,6 @@ pipeline:
                     configuration:
                       type: InheritFromApply
                   timeout: 10m
-              - step:
-                  type: ShellScript
-                  name: Shell Script_2
-                  identifier: ShellScript_2
-                  spec:
-                    shell: Bash
-                    onDelegate: true
-                    source:
-                      type: Inline
-                      spec:
-                        script: echo "test"
-                    environmentVariables: []
-                    outputVariables: []
-                  timeout: 10m
         tags: {}
   delegateSelectors:
     - cisco-test
