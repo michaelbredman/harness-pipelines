@@ -1,0 +1,68 @@
+pipeline:
+  projectIdentifier: Redman_Sandbox
+  orgIdentifier: SE_Sandbox
+  tags: {}
+  stages:
+    - stage:
+        name: Build
+        identifier: Build
+        type: CI
+        spec:
+          cloneCodebase: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: run
+                  identifier: run
+                  spec:
+                    connectorRef: redman_DH
+                    image: mredman/autoanywheredelegate:latest
+                    shell: Sh
+                    command: sleep 600
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: RedmanDDk8
+              namespace: harness-builds
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
+          sharedPaths:
+            - /harness/sharedpath
+    - stage:
+        name: Test
+        identifier: Test
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Shell Script_1
+                  identifier: ShellScript_1
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: echo <+pipeline.triggeredBy.name>
+                    environmentVariables: []
+                    outputVariables: []
+                    delegateSelectors:
+                      - redman-dd
+                  timeout: 10m
+                  failureStrategies: []
+        tags: {}
+  allowStageExecutions: true
+  properties:
+    ci:
+      codebase:
+        connectorRef: redmanGH
+        repoName: aahelmfile
+        build: <+input>
+  variables: []
+  identifier: Automation_Anywhere_Helmfile_Sync
+  name: Automation Anywhere Helmfile Sync
