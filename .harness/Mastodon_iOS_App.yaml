@@ -42,3 +42,7 @@ pipeline:
           runtime:
             type: Cloud
             spec: {}
+        strategy:
+          repeat:
+            times: 6
+            maxConcurrency: 3
