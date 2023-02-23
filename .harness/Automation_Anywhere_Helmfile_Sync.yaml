@@ -63,6 +63,10 @@ pipeline:
         connectorRef: redmanGH
         repoName: aahelmfile
         build: <+input>
-  variables: []
+  variables:
+    - name: region
+      type: String
+      description: ""
+      value: <+input>
   identifier: Automation_Anywhere_Helmfile_Sync
   name: Automation Anywhere Helmfile Sync
