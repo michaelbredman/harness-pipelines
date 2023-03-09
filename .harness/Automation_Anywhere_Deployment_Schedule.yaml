@@ -72,25 +72,6 @@ pipeline:
                     outputVariables: []
                   timeout: 10m
               - step:
-                  type: TerraformApply
-                  name: Terraform Apply_1
-                  identifier: TerraformApply_1
-                  spec:
-                    configuration:
-                      type: Inline
-                      spec:
-                        configFiles:
-                          store:
-                            type: Github
-                            spec:
-                              gitFetchType: Branch
-                              connectorRef: redmanGH
-                              repoName: aahelmfile
-                              branch: main
-                              folderPath: terraform
-                    provisionerIdentifier: crontrigger1
-                  timeout: 10m
-              - step:
                   type: JiraApproval
                   name: Jira Approval_1
                   identifier: JiraApproval_1
@@ -112,6 +93,39 @@ pipeline:
                       spec:
                         matchAnyCondition: true
                         conditions: []
+                  timeout: 1d
+              - step:
+                  type: TerraformApply
+                  name: Terraform Apply_1
+                  identifier: TerraformApply_1
+                  spec:
+                    configuration:
+                      type: Inline
+                      spec:
+                        configFiles:
+                          store:
+                            type: Github
+                            spec:
+                              gitFetchType: Branch
+                              connectorRef: redmanGH
+                              repoName: aahelmfile
+                              branch: main
+                              folderPath: terraform
+                    provisionerIdentifier: crontrigger1
+                  timeout: 10m
+              - step:
+                  type: HarnessApproval
+                  name: Destroy Triggers
+                  identifier: Destroy_Triggers
+                  spec:
+                    approvalMessage: Please review the following information and approve the pipeline progression
+                    includePipelineExecutionHistory: true
+                    approvers:
+                      userGroups:
+                        - _project_all_users
+                      minimumCount: 1
+                      disallowPipelineExecutor: false
+                    approverInputs: []
                   timeout: 1d
               - step:
                   type: TerraformDestroy
